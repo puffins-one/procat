@@ -1,4 +1,4 @@
-module procat
+module github.com/puffins-one/procat
 
 go 1.25.4
 

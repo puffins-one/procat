@@ -2,4 +2,6 @@
 procat
 
 # Output file
-output.txt
+out.txt
+
+.DS_Store

@@ -21,14 +21,20 @@ go install github.com/puffins-one/procat@latest
 
 ## Usage
 
-Usage: procat [--clipboard | -c] <project_directory> [output_file]
+Usage: procat [options] <project_directory> [output_file]
+
+Options:
+  -c, --clipboard       Copy output to the system clipboard.
+  -x, --exclude <exts>  Comma-separated list of extensions to exclude (e.g. "md,jpg").
+
+Examples:
 
 ```sh
-# Concatenate the current directory and copy the result to your clipboard
-procat . --clipboard
+# Concatenate, skipping markdown and jpg files
+procat -x md,jpg
 
-# You can also use the short alias -c
-procat . -c
+# Concatenate, exclude pngs, copy to clipboard
+procat -c -x png 
 
 # Concatenate and output to a file named 'project_context.txt'
 procat . project_context.txt
@@ -37,5 +43,5 @@ procat . project_context.txt
 procat .
 
 # Use a different project directory and copy to clipboard
-procat /path/to/your/project --clipboard
+procat -c /path/to/your/project
 ```

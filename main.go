@@ -13,13 +13,19 @@ import (
 
 func main() {
 	var clipboardFlag bool
+	var excludeFlag string
+
 	flag.BoolVar(&clipboardFlag, "clipboard", false, "Copy output to the system clipboard.")
 	flag.BoolVar(&clipboardFlag, "c", false, "Alias for --clipboard.")
+
+	flag.StringVar(&excludeFlag, "exclude", "", "Comma-separated list of file extensions to exclude (e.g. md,jpg).")
+	flag.StringVar(&excludeFlag, "x", "", "Alias for --exclude.")
+
 	flag.Parse()
 
 	args := flag.Args()
 	if len(args) < 1 || len(args) > 2 {
-		fmt.Fprintln(os.Stderr, "Usage: procat [--clipboard | -c] <project_directory> [output_file]")
+		fmt.Fprintln(os.Stderr, "Usage: procat [--clipboard | -c] [--exclude | -x md,jpg] <project_directory> [output_file]")
 		os.Exit(1)
 	}
 
@@ -34,7 +40,25 @@ func main() {
 		outputFile = ""
 	}
 
-	output, err := processProject(projectDir, outputFile)
+	// Process excluded extensions
+	var excludedExts []string
+	if excludeFlag != "" {
+		parts := strings.Split(excludeFlag, ",")
+		for _, part := range parts {
+			ext := strings.TrimSpace(part)
+			if ext == "" {
+				continue
+			}
+			// Normalize extension: lowercase and ensure it has a dot prefix
+			ext = strings.ToLower(ext)
+			if !strings.HasPrefix(ext, ".") {
+				ext = "." + ext
+			}
+			excludedExts = append(excludedExts, ext)
+		}
+	}
+
+	output, err := processProject(projectDir, outputFile, excludedExts)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error processing project: %v\n", err)
 		os.Exit(1)
@@ -56,7 +80,7 @@ func main() {
 	}
 }
 
-func processProject(projectDir, outputFilename string) (string, error) {
+func processProject(projectDir, outputFilename string, excludedExts []string) (string, error) {
 	var builder strings.Builder
 
 	ignore, err := gitignore.NewRepository(projectDir)
@@ -99,6 +123,16 @@ func processProject(projectDir, outputFilename string) (string, error) {
 
 		if info.IsDir() {
 			return nil
+		}
+
+		// Check for excluded extensions
+		if len(excludedExts) > 0 {
+			fileExt := strings.ToLower(filepath.Ext(path))
+			for _, excluded := range excludedExts {
+				if fileExt == excluded {
+					return nil // Skip this file
+				}
+			}
 		}
 
 		content, err := os.ReadFile(path)

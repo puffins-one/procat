@@ -31,10 +31,10 @@ Examples:
 
 ```sh
 # Concatenate, skipping markdown and jpg files
-procat -x md,jpg
+procat -x md,jpg .
 
 # Concatenate, exclude pngs, copy to clipboard
-procat -c -x png 
+procat -c -x png .
 
 # Concatenate and output to a file named 'project_context.txt'
 procat . project_context.txt

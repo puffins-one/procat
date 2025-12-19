@@ -6,6 +6,7 @@ A command-line tool that concatenates all files in a project directory into a si
 
 *   Recursively scans a directory.
 *   Intelligently ignores files and directories listed in `.gitignore`.
+*   **Supports `.catignore`**: Use a specific `.catignore` file to exclude files from concatenation without ignoring them in Git (e.g., `pnpm-lock.json`, `package-lock.json`).
 *   Skips binary files to keep the output clean.
 *   Wraps each file's content with clear `Start` and `End` markers.
 *   Outputs to a file, to standard output, or directly to the system clipboard.
@@ -27,7 +28,21 @@ Options:
   -c, --clipboard       Copy output to the system clipboard.
   -x, --exclude <exts>  Comma-separated list of extensions to exclude (e.g. "md,jpg").
 
-Examples:
+### The .catignore file
+
+You can place a `.catignore` file in the root of your project directory. This works exactly like `.gitignore`, but it only affects `procat`.
+
+This is useful for files you want to keep in version control but don't want to feed to an LLM (like massive lock files or specific documentation).
+
+Example `.catignore`:
+```text
+pnpm-lock.json
+package-lock.json
+*.svg
+docs/
+```
+
+### Examples
 
 ```sh
 # Concatenate, skipping markdown and jpg files

@@ -40,7 +40,6 @@ func main() {
 		outputFile = ""
 	}
 
-	// Process excluded extensions
 	var excludedExts []string
 	if excludeFlag != "" {
 		parts := strings.Split(excludeFlag, ",")
@@ -49,7 +48,6 @@ func main() {
 			if ext == "" {
 				continue
 			}
-			// Normalize extension: lowercase and ensure it has a dot prefix
 			ext = strings.ToLower(ext)
 			if !strings.HasPrefix(ext, ".") {
 				ext = "." + ext
@@ -85,15 +83,19 @@ func processProject(projectDir, outputFilename string, excludedExts []string) (s
 
 	ignore, err := gitignore.NewRepository(projectDir)
 	if err != nil && !os.IsNotExist(err) {
-		// A non-existent .gitignore is fine
 		return "", fmt.Errorf("error reading .gitignore: %w", err)
+	}
+
+	var catIgnore gitignore.GitIgnore
+	catIgnorePath := filepath.Join(projectDir, ".catignore")
+	if _, err := os.Stat(catIgnorePath); err == nil {
+		catIgnore, _ = gitignore.NewFromFile(catIgnorePath)
 	}
 
 	walkFn := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		// Skip the root directory
 		if path == projectDir {
 			return nil
 		}
@@ -103,7 +105,6 @@ func processProject(projectDir, outputFilename string, excludedExts []string) (s
 			return err
 		}
 
-		// Skip .git directory and output file
 		if info.IsDir() && info.Name() == ".git" {
 			return filepath.SkipDir
 		}
@@ -111,9 +112,17 @@ func processProject(projectDir, outputFilename string, excludedExts []string) (s
 			return nil
 		}
 
-		// Gitignore matching
 		if ignore != nil {
 			if match := ignore.Match(path); match != nil && match.Ignore() {
+				if info.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+		}
+
+		if catIgnore != nil {
+			if match := catIgnore.Match(path); match != nil && match.Ignore() {
 				if info.IsDir() {
 					return filepath.SkipDir
 				}
@@ -125,12 +134,11 @@ func processProject(projectDir, outputFilename string, excludedExts []string) (s
 			return nil
 		}
 
-		// Check for excluded extensions
 		if len(excludedExts) > 0 {
 			fileExt := strings.ToLower(filepath.Ext(path))
 			for _, excluded := range excludedExts {
 				if fileExt == excluded {
-					return nil // Skip this file
+					return nil
 				}
 			}
 		}

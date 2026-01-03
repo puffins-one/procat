@@ -7,6 +7,7 @@ A command-line tool that concatenates all files in a project directory into a si
 *   Recursively scans a directory.
 *   Intelligently ignores files and directories listed in `.gitignore`.
 *   **Supports `.catignore`**: Use a specific `.catignore` file to exclude files from concatenation without ignoring them in Git (e.g., `pnpm-lock.json`, `package-lock.json`).
+*   **Supports `.catinclude`**: Use a whitelist mode to specific exactly which files to include (bypassing `.catignore` but respecting `.gitignore` unless forced).
 *   Skips binary files to keep the output clean.
 *   Wraps each file's content with clear `Start` and `End` markers.
 *   Outputs to a file, to standard output, or directly to the system clipboard.
@@ -27,6 +28,11 @@ Usage: procat [options] <project_directory> [output_file]
 Options:
   -c, --clipboard       Copy output to the system clipboard.
   -x, --exclude <exts>  Comma-separated list of extensions to exclude (e.g. "md,jpg").
+  -i, --include <file>  Path to a file (e.g., .catinclude) specifying files to include.
+                        Only files matching patterns in this file will be processed.
+                        This overrides .catignore.
+  -f, --force           Force inclusion of files even if they are listed in .gitignore.
+                        (Only applies when using --include).
 
 ### The .catignore file
 
@@ -42,21 +48,34 @@ package-lock.json
 docs/
 ```
 
+### The .catinclude file
+
+You can create a file (e.g., `.catinclude`) to act as a whitelist. If used, `procat` will **only** include files matching patterns in this file.
+
+Example `.catinclude`:
+```text
+src/
+README.md
+!src/legacy_code.go
+```
+
+**Note:** If a file is in `.catinclude` but also in `.gitignore`, `procat` will warn you and skip it to prevent accidental leakage of secrets. Use `-f` / `--force` to override this.
+
 ### Examples
 
 ```sh
+# Standard usage: Concatenate everything not in .gitignore/.catignore
+procat .
+
+# Concatenate only files matching patterns in .catinclude
+procat -i .catinclude .
+
+# Concatenate files in .catinclude, even if they are gitignored
+procat -i .catinclude --force .
+
 # Concatenate, skipping markdown and jpg files
 procat -x md,jpg .
 
-# Concatenate, exclude pngs, copy to clipboard
-procat -c -x png .
-
 # Concatenate and output to a file named 'project_context.txt'
 procat . project_context.txt
-
-# Concatenate and print to the terminal (standard output)
-procat .
-
-# Use a different project directory and copy to clipboard
-procat -c /path/to/your/project
 ```
